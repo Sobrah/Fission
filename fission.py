@@ -3,6 +3,7 @@ import os
 import requests
 import project
 
+from conditions import conditions
 from urllib.parse import urlparse, urljoin
 
 
@@ -32,11 +33,12 @@ class Fission:
         self.content = response.text
         STORED_URLS.add(response.url)
 
-        if response.headers["Content-type"].split("/")[0] != "text":
+        if response.headers["Content-type"].split("/")[0] == "text":
+            self.collective()
+        elif conditions(response.headers):
             self.content = response.content
             self.save(mode="wb")
-        else:
-            self.collective()
+            
 
     def collective(self) -> str:
         if urls := self.find_urls(self.content):

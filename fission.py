@@ -1,7 +1,7 @@
 import re
 import os
 import requests
-import project
+import helpers
 
 from conditions import conditions
 from urllib.parse import urlparse, urljoin
@@ -10,43 +10,43 @@ from urllib.parse import urlparse, urljoin
 class Trigger:
     def __init__(self, url: str) -> None:
         BASE_PARTS = urlparse(url)
-        GLOBALS = globals()
 
         if not (BASE_PARTS.scheme and BASE_PARTS.netloc):
-            raise ValueError("Invalid URL.")
-        if not "STORED_URLS" in GLOBALS:
-            global STORED_URLS
-            STORED_URLS = set()
-        if not "BASE_DOMAIN" in GLOBALS:
-            global BASE_DOMAIN
-            BASE_DOMAIN = BASE_PARTS.netloc
+            raise ValueError("Invalid URL")
+        
+        global STORED_URLS, BASE_NETLOC
+        STORED_URLS = set()
+        BASE_NETLOC = BASE_PARTS.netloc
 
         Fission(url)
 
 
 class Fission:
     def __init__(self, url: str) -> None:
-        print(project.paint("Requesting:", "green", "italic"), url)
-        if conditions(url):
-            response = requests.get(url)
-        else:
-            self.base_url = response.url
-            self.location, self.directory = self.address(response.url)[:2]
-            self.content = response.text
-            STORED_URLS.add(response.url)
+        if not conditions(url):
+            return None
+        
+        print(helpers.paint("Requesting:", "green", "italic"), url)
+        response = requests.get(url)
+            
+        self.base_url = response.url
+        self.location, self.directory = self.address(response.url)[:2]
+        STORED_URLS.add(response.url)
 
-            if response.headers["Content-type"].split("/")[0] == "text":
-                self.collective()
-            else:
-                self.content = response.content
-                self.save(mode="wb")
+        if response.headers["Content-type"].split("/")[0] == "text":
+            self.content = response.text
+            self.collective()
+        else:
+            self.content = response.content
+            self.save(mode="wb")
             
 
     def collective(self) -> str:
-        if urls := self.find_urls(self.content):
+        if urls := self.find_urls():
             for tag, attribute, url in urls:
                 valid_url = urljoin(self.base_url, url)
-                if urlparse(valid_url).netloc == BASE_DOMAIN:
+                
+                if urlparse(valid_url).netloc == BASE_NETLOC:
                     if not valid_url in STORED_URLS:
                         Fission(valid_url)
 
@@ -57,18 +57,17 @@ class Fission:
                         tag, f'{attribute}="{relative_path}/{vu_address[2]}"'
                     )
 
-        return self.save()
+        self.save()
 
-    @classmethod
-    def find_urls(cls, text: str) -> set:
+    def find_urls(self) -> set:
         urls = set(
             re.findall(
                 r"((href|src)=(?:\"|\')([^<>=\'\";?#]+)(?:[^<>=\'\"]*)(?:\'|\"))",
-                text,
+                self.content,
                 re.IGNORECASE,
             )
         )
-        # Tag, Attribute, Quotation, URL
+        # Tag, Attribute, URL
         return urls
 
     @classmethod
@@ -80,19 +79,18 @@ class Fission:
             path, file_name = matches.groups()
         if not path.endswith("/"):
             path += "/"
-
+        
         directory = (netloc + path).replace(".", "_")
 
         return (directory + file_name), directory, file_name
 
     def save(self, mode="w") -> str:
-        print(project.paint("Saving:", "blue", "italic"), self.location)
+        print(helpers.paint("Saving:", "blue", "italic"), self.location)
         os.makedirs(self.directory, exist_ok=True)
         with open(self.location, mode) as file:
             file.write(self.content)
 
-        return self.location
-
 
 if __name__ == "__main__":
+    # For debugging purposes
     Trigger(input("URL: "))

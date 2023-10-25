@@ -1,5 +1,13 @@
+INVALID_TYPES = [
+    ".mp4",
+    ".mp3",
+    ".webm"
+]
+
+
 def conditions(url):
-    if url.endswith(".mp4") or url.endswith(".mp3"):
-        return False
+    for invalid_type in INVALID_TYPES:
+        if url.endswith(invalid_type):
+            return False
     
     return True

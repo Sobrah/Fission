@@ -1,4 +1,4 @@
-import project as p
+import helpers as p
 
 
 def test_paint():

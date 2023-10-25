@@ -1,5 +1,5 @@
-def conditions(headers):
-    return not isvideo(headers["Content-type"])
-
-def isvideo(type):
-    return type.split("/")[0] == "video"
+def conditions(url):
+    if url.endswith(".mp4") or url.endswith(".mp3"):
+        return False
+    
+    return True

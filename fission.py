@@ -5,7 +5,7 @@ import project
 
 from conditions import conditions
 from urllib.parse import urlparse, urljoin
-
+  
 
 class Trigger:
     def __init__(self, url: str) -> None:
@@ -27,17 +27,19 @@ class Trigger:
 class Fission:
     def __init__(self, url: str) -> None:
         print(project.paint("Requesting:", "green", "italic"), url)
-        response = requests.get(url)
-        self.base_url = response.url
-        self.location, self.directory = self.address(response.url)[:2]
-        self.content = response.text
-        STORED_URLS.add(response.url)
+        if conditions(url):
+            response = requests.get(url)
+        else:
+            self.base_url = response.url
+            self.location, self.directory = self.address(response.url)[:2]
+            self.content = response.text
+            STORED_URLS.add(response.url)
 
-        if response.headers["Content-type"].split("/")[0] == "text":
-            self.collective()
-        elif conditions(response.headers):
-            self.content = response.content
-            self.save(mode="wb")
+            if response.headers["Content-type"].split("/")[0] == "text":
+                self.collective()
+            else:
+                self.content = response.content
+                self.save(mode="wb")
             
 
     def collective(self) -> str:

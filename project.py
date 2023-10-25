@@ -4,7 +4,7 @@ import sys
 
 def main():
     if len(sys.argv) != 2:
-        sys.exit("Usage: project.py url.")
+        sys.exit("Usage: project.py URL")
 
     try:
         # Depends On User System
